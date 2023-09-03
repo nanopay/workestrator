@@ -1,0 +1,11 @@
+name = "nano-workestrator"
+compatibility_date = "2023-01-01"
+
+[durable_objects]
+bindings = [
+  { name = "DURABLE_OBJECT", class_name = "DurableWorkestrator" }
+]
+
+[[migrations]]
+tag = "v1" # Should be unique for each entry
+new_classes = ["DurableWorkestrator"]

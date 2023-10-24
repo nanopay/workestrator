@@ -1,11 +1,17 @@
 import { checkWork, validateWork } from 'nanocurrency'
 
+export interface Worker {
+	id: number
+	name: string
+	url: string
+}
+
 interface WorkResponse {
 	work: string
 }
 
 export interface WorkResult extends WorkResponse {
-	worker: string
+	worker: Worker
 }
 
 export class RequestError extends Error {
@@ -20,13 +26,17 @@ export class RequestError extends Error {
 }
 
 export default class Workestrator {
-	workers: string[]
+	workers: Worker[]
 	timeout: number
 	private processes: Record<string, AbortController> = {}
 
-	constructor(workers: string[], timeout: number = 30000) {
+	constructor(workers: Worker[], timeout: number = 30000) {
 		this.workers = workers
 		this.timeout = timeout
+	}
+
+	addWorker(worker: Worker) {
+		this.workers.push(worker)
 	}
 
 	async generate(hash: string, threshold: string): Promise<WorkResult> {
@@ -47,9 +57,9 @@ export default class Workestrator {
 		const promises = this.workers.map(
 			worker =>
 				new Promise(resolve => {
-					this.request(worker, hash, threshold, this.processes[hash].signal)
+					this.request(worker.url, hash, threshold, this.processes[hash].signal)
 						.then(work => {
-							console.info(`SUCCESS | Worker: ${worker} | Hash: ${hash}`)
+							console.info(`SUCCESS | Worker: ${worker.name} | Hash: ${hash}`)
 							resolve({
 								worker,
 								work,
@@ -63,12 +73,14 @@ export default class Workestrator {
 								return
 							if (error instanceof RequestError) {
 								console.error(
-									`ERROR | Worker: ${worker} | Message: ${error.message} | Status: ${error.status} (${error.statusText})`,
+									`ERROR | Worker: ${worker.name} | Message: ${error.message} | Status: ${error.status} (${error.statusText})`,
 								)
 							} else if (error instanceof Error) {
-								console.error(`ERROR | Worker: ${worker} | ${error.message}`)
+								console.error(
+									`ERROR | Worker: ${worker.name} | ${error.message}`,
+								)
 							} else {
-								console.error(`ERROR | Worker: ${worker} |`, error)
+								console.error(`ERROR | Worker: ${worker.name} |`, error)
 							}
 						})
 				}),

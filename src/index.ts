@@ -10,13 +10,19 @@ const app = new Hono<{ Bindings: Bindings }>()
 
 interface WorkRecord {
 	work: string
+	workerId: number
 	threshold: string
 	startedAt: number
 	took: number
 }
 
-interface WorkResponse extends WorkRecord {
+interface WorkRecordWithHash extends WorkRecord {
 	hash: string
+}
+
+export interface WorkResponse extends WorkRecordWithHash {
+	hash: string
+	workerName: string
 	cached: boolean
 }
 
@@ -60,31 +66,43 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 					threshold,
 				})
 				if (isValidWork) {
-					return c.json<WorkResponse>({ ...cached, hash, cached: true })
+					const workerName =
+						this.workers.find(worker => worker.id === cached.workerId)?.name ||
+						'noname'
+					return c.json<WorkResponse>({
+						...cached,
+						workerName,
+						hash,
+						cached: true,
+					})
 				}
 			}
 
 			const startedAt = Date.now()
 
-			const result = await this.generate(hash, threshold)
+			const {
+				threshold: realThreshold,
+				work,
+				worker,
+			} = await this.generate(hash, threshold)
 
 			const took = Date.now() - startedAt
 
-			if (!result) {
-				return c.json({ error: 'No result' }, 500)
-			}
-
-			await this.storage.put<WorkRecord>(hash, {
-				work: result.work,
-				threshold,
+			this.storeWork({
+				hash,
+				work,
+				threshold: realThreshold,
+				workerId: worker.id,
 				startedAt,
 				took,
 			})
 
 			return c.json<WorkResponse>({
-				...result,
 				hash,
-				threshold,
+				work,
+				workerId: worker.id,
+				threshold: realThreshold,
+				workerName: worker.name,
 				startedAt,
 				took,
 				cached: false,
@@ -118,6 +136,23 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			workers = results || []
 		}
 		workers.forEach(this.addWorker)
+	}
+
+	async storeWork({
+		hash,
+		work,
+		threshold,
+		workerId,
+		startedAt,
+		took,
+	}: WorkRecordWithHash) {
+		await this.storage.put<WorkRecord>(hash, {
+			work,
+			threshold,
+			workerId,
+			startedAt,
+			took,
+		})
 	}
 
 	fetch(request: Request) {

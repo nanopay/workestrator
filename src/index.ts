@@ -127,6 +127,30 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			const result = values.slice(startIndex, endIndex)
 			return c.json(result)
 		})
+
+		this.app.put('/workers', async c => {
+			const { name, url } = await c.req.json<Omit<Worker, 'id'>>()
+			if (typeof name !== 'string' || name.length < 2 || name.length > 64) {
+				throw new Error('Invalid name')
+			}
+			if (!/^https?:\/\//i.test(url)) {
+				throw new Error('Invalid URL')
+			}
+			const id = await this.db
+				.prepare('INSERT INTO workers (name, url) values(?1, ?2) RETURNING id')
+				.bind(name, url)
+				.first<number>('id')
+			await this.storage.put<Worker[]>('workers', [
+				...this.workers,
+				{
+					id,
+					name,
+					url,
+				},
+			])
+			await this.addWorker({ name, url, id })
+			return c.json({ success: true, id })
+		})
 	}
 
 	async init() {

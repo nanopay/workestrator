@@ -6,7 +6,7 @@ import { errorHandler } from './middlewares'
 import { SEND_DIFFICULTY } from './constants'
 import Workestrator, { Worker } from './workestrator'
 
-const app = new Hono<{ Bindings: Bindings }>()
+const app = new Hono<{ Bindings: Bindings }>().onError(errorHandler)
 
 interface WorkRecord {
 	work: string

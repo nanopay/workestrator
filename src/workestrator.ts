@@ -1,4 +1,5 @@
 import { checkWork, validateWork } from 'nanocurrency'
+import { verifyWorkThreshold } from './utils'
 
 export interface Worker {
 	id: number
@@ -11,6 +12,7 @@ interface WorkResponse {
 }
 
 export interface WorkResult extends WorkResponse {
+	threshold: string
 	worker: Worker
 }
 
@@ -60,9 +62,11 @@ export default class Workestrator {
 					this.request(worker.url, hash, threshold, this.processes[hash].signal)
 						.then(work => {
 							console.info(`SUCCESS | Worker: ${worker.name} | Hash: ${hash}`)
+							const threshold = verifyWorkThreshold(hash, work)
 							resolve({
 								worker,
 								work,
+								threshold,
 							})
 						})
 						.catch(error => {
@@ -93,10 +97,11 @@ export default class Workestrator {
 
 		return Promise.race([resolvedResult, settledResults])
 			.then(result => {
-				const { work, worker } = result as WorkResult
+				const { work, threshold, worker } = result as WorkResult
 				return {
-					worker,
 					work,
+					threshold,
+					worker,
 				}
 			})
 			.catch(() => {

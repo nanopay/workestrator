@@ -153,6 +153,12 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			startedAt,
 			took,
 		})
+
+		await this.db
+			.prepare(
+				`INSERT INTO works (hash, work, threshold, worker, took) VALUES(?1, ?2, ?3, ?4, ?5)`,
+			)
+			.bind(hash, work, threshold, workerId, took)
 	}
 
 	fetch(request: Request) {

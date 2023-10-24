@@ -41,6 +41,10 @@ export default class Workestrator {
 		this.workers.push(worker)
 	}
 
+	removeWorker(workerId: number) {
+		this.workers = this.workers.filter(worker => worker.id !== workerId)
+	}
+
 	async generate(hash: string, threshold: string): Promise<WorkResult> {
 		/*
             - Call all workers to solve the PoW concurrently

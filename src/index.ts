@@ -148,8 +148,20 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 					url,
 				},
 			])
-			await this.addWorker({ name, url, id })
+			this.addWorker({ name, url, id })
 			return c.json({ success: true, id })
+		})
+
+		this.app.delete('/workers/:id', async c => {
+			const id = Number(c.req.param('id'))
+			if (isNaN(id)) throw new Error('Invalid ID')
+			const worker = this.workers.find(worker => worker.id === id)
+			if (!worker) return c.json({ error: 'Not Found' }, 404)
+			await this.db.exec(`DELETE FROM workers WHERE id = ${id}`)
+			const workers = this.workers.filter(worker => worker.id !== id)
+			await this.storage.put<Worker[]>('workers', workers)
+			this.removeWorker(worker.id)
+			return c.json({ success: true })
 		})
 	}
 

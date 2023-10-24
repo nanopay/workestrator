@@ -128,6 +128,11 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			return c.json(result)
 		})
 
+		this.app.get('/workers', async c => {
+			const { results } = await this.db.prepare(`SELECT * FROM workers`).all()
+			return c.json(results)
+		})
+
 		this.app.put('/workers', async c => {
 			const { name, url } = await c.req.json<Omit<Worker, 'id'>>()
 			if (typeof name !== 'string' || name.length < 2 || name.length > 64) {

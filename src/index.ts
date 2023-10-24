@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import { checkHash, checkThreshold, validateWork } from 'nanocurrency'
 
 import { Bindings } from './types'
-import { errorHandler } from './middlewares'
+import { authGate, errorHandler } from './middlewares'
 import { SEND_DIFFICULTY } from './constants'
 import Workestrator, { Worker } from './workestrator'
 
@@ -242,6 +242,8 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 		return this.app.fetch(request)
 	}
 }
+
+app.use('*', authGate)
 
 app.get('/', c => {
 	return c.json({ message: 'Nano Workestrator' })

@@ -171,7 +171,7 @@ app.get('/', c => {
 })
 
 app.use('*', async c => {
-	const id = c.env.DURABLE_OBJECT.idFromName('nano-workestrator-000')
+	const id = c.env.DURABLE_OBJECT.idFromName('nano-workestrator-001')
 	const obj = c.env.DURABLE_OBJECT.get(id)
 
 	return await obj.fetch(c.req.url, {

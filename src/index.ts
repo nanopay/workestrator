@@ -22,13 +22,13 @@ interface WorkResponse extends WorkRecord {
 
 export class DurableWorkestrator extends Workestrator implements DurableObject {
 	app = new Hono<{ Bindings: Bindings }>().onError(errorHandler)
-	state: DurableObjectState
+	storage: DurableObjectStorage
 	db: D1Database
 
 	constructor(state: DurableObjectState, env: Bindings) {
 		super([])
 
-		this.state = state
+		this.storage = state.storage
 
 		this.db = env.DB
 
@@ -51,7 +51,7 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 				return c.json({ error: 'invalid threshold' }, 400)
 			}
 
-			const cached = await this.state.storage?.get<WorkRecord>(hash)
+			const cached = await this.storage.get<WorkRecord>(hash)
 
 			if (cached) {
 				const isValidWork = validateWork({
@@ -74,7 +74,7 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 				return c.json({ error: 'No result' }, 500)
 			}
 
-			await this.state.storage?.put<WorkRecord>(hash, {
+			await this.storage.put<WorkRecord>(hash, {
 				work: result.work,
 				threshold,
 				startedAt,
@@ -99,7 +99,7 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			const size = 10
 			const startIndex = (page - 1) * size
 			const endIndex = page * size
-			const list: Map<string, WorkRecord> = await this.state.storage.list({
+			const list: Map<string, WorkRecord> = await this.storage.list({
 				limit: endIndex,
 				reverse: true,
 			})
@@ -110,7 +110,7 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 	}
 
 	async init() {
-		let workers = await this.state.storage.get<Worker[]>('workers')
+		let workers = await this.storage.get<Worker[]>('workers')
 		if (!workers) {
 			const { results } = await this.db
 				.prepare('SELECT * FROM workers')

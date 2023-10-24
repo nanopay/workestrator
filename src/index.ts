@@ -38,7 +38,9 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 
 		this.db = env.DB
 
-		state.blockConcurrencyWhile(this.init)
+		state.blockConcurrencyWhile(async () => {
+			await this.init()
+		})
 
 		this.app.post('/', async c => {
 			// TODO: validate work request body

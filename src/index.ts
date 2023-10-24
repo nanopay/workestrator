@@ -8,11 +8,6 @@ import Workestrator, { Worker } from './workestrator'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
-interface WorkerError {
-	error: string
-	worker: string
-}
-
 interface WorkRecord {
 	work: string
 	threshold: string
@@ -123,10 +118,6 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			workers = results || []
 		}
 		workers.forEach(this.addWorker)
-	}
-
-	handleWorkerError(error: WorkerError) {
-		console.error('WORKER ERROR |', error)
 	}
 
 	fetch(request: Request) {

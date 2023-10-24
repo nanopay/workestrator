@@ -111,21 +111,52 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			})
 		})
 
-		this.app.get('/history/:page', async c => {
-			const page = Number(c.req.param('page'))
-			if (isNaN(page)) {
-				return c.json({ error: 'invalid page' }, 400)
+		this.app.get('/works', async c => {
+			const orderBy = c.req.query('orderBy')?.toUpperCase() || 'DESC'
+			if (orderBy !== 'ASC' && orderBy !== 'DESC') {
+				return c.json({ error: 'Invalid orderBy' }, 400)
 			}
-			const size = 10
-			const startIndex = (page - 1) * size
-			const endIndex = page * size
-			const list: Map<string, WorkRecord> = await this.storage.list({
-				limit: endIndex,
-				reverse: true,
+			const limit = Number(c.req.query('limit')) || 20
+			if (isNaN(limit) || limit < 1 || limit > 100) {
+				return c.json({ error: 'Invalid limit' }, 400)
+			}
+			const offset = Number(c.req.query('offset')) || 0
+			if (isNaN(offset) || offset < 0) {
+				return c.json({ error: 'Invalid offset' }, 400)
+			}
+
+			const [count, data] = await this.db.batch<Record<string, any>>([
+				this.db.prepare('SELECT COUNT(*) as count FROM works'),
+				this.db.prepare(`
+					SELECT hash, work, threshold, worker, started_at, workers.name
+					FROM works
+					INNER JOIN workers ON works.worker = workers.id
+					ORDER BY started_at ${orderBy}
+					LIMIT ${limit}
+					OFFSET ${offset}
+				`),
+			])
+
+			const total = count.results ? (count.results[0].count as number) : 0
+
+			const works = (data.results || []).map(
+				({ hash, work, threshold, worker, started_at, name }) => ({
+					hash,
+					work,
+					threshold,
+					startedAt: started_at,
+					workerId: worker,
+					workerName: name,
+				}),
+			)
+
+			return c.json({
+				total,
+				orderBy,
+				limit,
+				offset,
+				works,
 			})
-			const values = Array.from(list.values())
-			const result = values.slice(startIndex, endIndex)
-			return c.json(result)
 		})
 
 		this.app.get('/workers', async c => {

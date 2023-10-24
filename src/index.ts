@@ -220,19 +220,24 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 		startedAt,
 		took,
 	}: WorkRecordWithHash) {
-		await this.storage.put<WorkRecord>(hash, {
-			work,
-			threshold,
-			workerId,
-			startedAt,
-			took,
-		})
+		try {
+			await this.storage.put<WorkRecord>(hash, {
+				work,
+				threshold,
+				workerId,
+				startedAt,
+				took,
+			})
 
-		await this.db
-			.prepare(
-				`INSERT INTO works (hash, work, threshold, worker, took) VALUES(?1, ?2, ?3, ?4, ?5)`,
-			)
-			.bind(hash, work, threshold, workerId, took)
+			await this.db
+				.prepare(
+					`INSERT INTO works (hash, work, threshold, worker, started_at, took) VALUES(?1, ?2, ?3, ?4, ?5, ?6)`,
+				)
+				.bind(hash, work, threshold, workerId, startedAt, took)
+				.run()
+		} catch (error) {
+			console.error('storeWork failed', hash, error)
+		}
 	}
 
 	fetch(request: Request) {

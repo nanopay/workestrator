@@ -43,8 +43,6 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 		})
 
 		this.app.post('/', async c => {
-			// TODO: validate work request body
-
 			const { action, hash, threshold = SEND_DIFFICULTY } = await c.req.json()
 
 			if (action !== 'work_generate') {

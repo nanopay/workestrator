@@ -7,6 +7,7 @@
 		"format": "prettier --config .prettierrc.json --write ."
 	},
 	"dependencies": {
+		"blakejs": "^1.2.1",
 		"hono": "^3.2.7",
 		"nanocurrency": "^2.5.0",
 		"prettier": "^3.0.2"

@@ -1,6 +1,10 @@
 name = "nano-workestrator"
 compatibility_date = "2023-01-01"
 
+d1_databases = [
+  { binding = "DB", database_name = "workestrator", database_id = "" },
+]
+
 [durable_objects]
 bindings = [
   { name = "DURABLE_OBJECT", class_name = "DurableWorkestrator" }

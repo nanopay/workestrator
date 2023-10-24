@@ -12,9 +12,10 @@ This is done by allowing distribution of PoW between different workers concurren
 
 This project is made with Typescript and was designed to run on EDGE. It implements:
 
+- [Hono](https://hono.dev/): A small, simple, and ultrafast web framework for the Edges
 - [Cloudflare Workers](https://developers.cloudflare.com/workers/): a low cost, fast and scalable serverless environment
 - [Durable Objects](https://developers.cloudflare.com/durable-objects/): allow us to cache Proof of Work with low latency in-memory.
-- [Hono](https://hono.dev/): A small, simple, and ultrafast web framework for the Edges
+- [D1](https://developers.cloudflare.com/d1/): D1 is Cloudflare’s native serverless database
 
 ## Running locally
 
@@ -34,6 +35,32 @@ Run:
 
 ```
 npm run dev
+```
+
+## Manage Workers
+
+Add a new worker:
+
+```bash
+curl --request PUT \
+  --url "http://127.0.0.1:7090/workers" \
+  --header "Content-Type: application/json" \
+  --data '{
+	"name": "my-nano-node",
+	"url": "http://127.0.0.1:7076"
+}'
+```
+
+List workers:
+
+```bash
+curl "http://127.0.0.1:7090/workers"
+```
+
+Delete a worker
+
+```bash
+curl --request DELETE "http://127.0.0.1:7090/workers/[id]"
 ```
 
 ## Usage
@@ -57,10 +84,11 @@ JSON Response:
 
 ```json
 {
-	"worker": "http://127.0.0.1:7076",
 	"work": "000020c3204e1b6a",
 	"hash": "DA112538B6566B5555725F724B281E013D7C5DE42498C71D9A1CD44B8AA0CD3A",
 	"threshold": "fffffff800000000",
+	"workerName": "my-worker-name",
+	"workerId": 1,
 	"startedAt": 1693983379659,
 	"took": 1076,
 	"cached": false
@@ -77,10 +105,11 @@ Then login to your Cloudflare account:
 pnpm wrangler login
 ```
 
+When in production, it is highly recommended to use the authentication key.
 Add the environments to your Cloudfler Worker:
 
 ```
-pnpm wrangler secret put WORKER_URLS
+pnpm wrangler secret put AUTH_KEY
 ```
 
 Finally, deploy:
@@ -88,6 +117,13 @@ Finally, deploy:
 ```
 pnpm run deploy
 ```
+
+# Authenticated calls
+
+You can use 2 different strategies
+
+- Header: `"Authorization": "Bearer xxxxx"`
+- URL Query: `?authKey=xxxxx`
 
 ## Donate Ӿ
 

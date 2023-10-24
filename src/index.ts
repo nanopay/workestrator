@@ -4,7 +4,7 @@ import { checkHash, checkThreshold, validateWork } from 'nanocurrency'
 import { Bindings } from './types'
 import { errorHandler } from './middlewares'
 import { SEND_DIFFICULTY } from './constants'
-import Workestrator from './workestrator'
+import Workestrator, { Worker } from './workestrator'
 
 const app = new Hono<{ Bindings: Bindings }>()
 
@@ -28,13 +28,16 @@ interface WorkResponse extends WorkRecord {
 export class DurableWorkestrator extends Workestrator implements DurableObject {
 	app = new Hono<{ Bindings: Bindings }>().onError(errorHandler)
 	state: DurableObjectState
+	db: D1Database
 
 	constructor(state: DurableObjectState, env: Bindings) {
-		const workers = env.WORKER_URLS?.split(',') || []
-
-		super(workers)
+		super([])
 
 		this.state = state
+
+		this.db = env.DB
+
+		state.blockConcurrencyWhile(this.init)
 
 		this.app.post('/', async c => {
 			// TODO: validate work request body
@@ -109,6 +112,17 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			const result = values.slice(startIndex, endIndex)
 			return c.json(result)
 		})
+	}
+
+	async init() {
+		let workers = await this.state.storage.get<Worker[]>('workers')
+		if (!workers) {
+			const { results } = await this.db
+				.prepare('SELECT * FROM workers')
+				.all<Worker>()
+			workers = results || []
+		}
+		workers.forEach(this.addWorker)
 	}
 
 	handleWorkerError(error: WorkerError) {

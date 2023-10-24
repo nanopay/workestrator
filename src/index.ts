@@ -32,7 +32,7 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 	db: D1Database
 
 	constructor(state: DurableObjectState, env: Bindings) {
-		super([])
+		super()
 
 		this.storage = state.storage
 
@@ -137,7 +137,7 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 				.all<Worker>()
 			workers = results || []
 		}
-		workers.forEach(this.addWorker)
+		workers.forEach(worker => this.addWorker(worker))
 	}
 
 	async storeWork({

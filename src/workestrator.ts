@@ -32,7 +32,7 @@ export default class Workestrator {
 	timeout: number
 	private processes: Record<string, AbortController> = {}
 
-	constructor(workers: Worker[], timeout: number = 30000) {
+	constructor(workers: Worker[] = [], timeout: number = 30000) {
 		this.workers = workers
 		this.timeout = timeout
 	}

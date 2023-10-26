@@ -174,7 +174,7 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 				.prepare('INSERT INTO workers (name, url) values(?1, ?2) RETURNING id')
 				.bind(name, url)
 				.first<number>('id')
-			await this.storage.put<Worker[]>('workers', [
+			await this.storage.put('workers', [
 				...this.workers,
 				{
 					id,
@@ -182,6 +182,9 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 					url,
 				},
 			])
+			if (!id) {
+				throw new Error('Failed to get ID')
+			}
 			this.addWorker({ name, url, id })
 			return c.json({ success: true, id })
 		})
@@ -273,7 +276,7 @@ app.get('/', c => {
 })
 
 app.use('*', async c => {
-	const id = c.env.DURABLE_OBJECT.idFromName('nano-workestrator-001xx')
+	const id = c.env.DURABLE_OBJECT.idFromName('nano-workestrator-001')
 	const obj = c.env.DURABLE_OBJECT.get(id)
 
 	return await obj.fetch(c.req.url, {

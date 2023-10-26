@@ -209,6 +209,10 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			if (name) worker.name = name
 			if (url) worker.url = url
 			await this.storage.put<Worker[]>('workers', this.workers)
+			await this.db
+				.prepare(`UPDATE workers SET name=?, url=? WHERE id=?3`)
+				.bind(worker.name, worker.url, id)
+				.run()
 			return c.json({ success: true })
 		})
 

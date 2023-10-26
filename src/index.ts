@@ -186,6 +186,29 @@ export class DurableWorkestrator extends Workestrator implements DurableObject {
 			return c.json({ success: true, id })
 		})
 
+		this.app.patch('/workers/:id', async c => {
+			const id = Number(c.req.param('id'))
+			if (isNaN(id)) {
+				return c.json({ error: 'Invalid ID' }, 400)
+			}
+			const { name, url } = await c.req.json<Partial<Worker>>()
+			if (
+				name &&
+				(typeof name !== 'string' || name.length < 2 || name.length > 64)
+			) {
+				return c.json({ error: 'Invalid name' }, 400)
+			}
+			if (url && !/^https?:\/\//i.test(url)) {
+				return c.json({ error: 'Invalid url' }, 400)
+			}
+			const worker = this.workers.find(worker => worker.id === id)
+			if (!worker) return c.json({ error: 'Worker Not Found' }, 404)
+			if (name) worker.name = name
+			if (url) worker.url = url
+			await this.storage.put<Worker[]>('workers', this.workers)
+			return c.json({ success: true })
+		})
+
 		this.app.delete('/workers/:id', async c => {
 			const id = Number(c.req.param('id'))
 			if (isNaN(id)) throw new Error('Invalid ID')
@@ -250,7 +273,7 @@ app.get('/', c => {
 })
 
 app.use('*', async c => {
-	const id = c.env.DURABLE_OBJECT.idFromName('nano-workestrator-001')
+	const id = c.env.DURABLE_OBJECT.idFromName('nano-workestrator-001xx')
 	const obj = c.env.DURABLE_OBJECT.get(id)
 
 	return await obj.fetch(c.req.url, {

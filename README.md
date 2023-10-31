@@ -106,7 +106,7 @@ pnpm wrangler login
 ```
 
 When in production, it is highly recommended to use the authentication key.
-Add the environments to your Cloudfler Worker:
+Add the environments to your Cloudflare Worker:
 
 ```
 pnpm wrangler secret put AUTH_KEY
